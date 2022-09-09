@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 client = Client(key, secret)
 tikets = []
 class Processes():
-    def TiketProcess(price, quantity, symbol):
+    def TiketProcess(price, quantity, symbol, type):
         time = datetime.now().strftime("%H:%M:%S")
         global Tikets
         x = {
@@ -25,19 +25,22 @@ class Processes():
             'price' : price,
             'symbol' : symbol,
             'quantity' : quantity,
+            'type' : type,
             'sold' : False
         }
-        Tikets.append(x)
+        tikets.append(x)
 
     def SellProcess(price, quantity, symbol):
         #Making Sell and check if system make error
         try:    
             order = client.create_order(
-                symbol,
+                symbol = symbol,
                 side=Client.SIDE_SELL,
                 type=Client.ORDER_TYPE_MARKET,
                 quantity = quantity
                 )
+
+            Processes.TiketProcess(price, quantity, symbol, 'Sell')
         except Exception as inst:
             print(inst)
 
@@ -51,7 +54,7 @@ class Processes():
                 quantity=quantity
                 )
             
-            Processes.TiketProcess(price, quantity, symbol)
+            Processes.TiketProcess(price, quantity, symbol, 'Buy')
             print("Was bouth {}".format(symbol))
         except Exception as inst:
             print(inst)
@@ -78,6 +81,7 @@ def OperationWithCoins(update, context):
     UserText = update.message.text
     ReplyText = update.message.reply_text
     for i in Coins:
+        
         if  UserText == "Check price of {}".format(i):
             KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i)
             x = MainProcesses()
@@ -92,6 +96,15 @@ def OperationWithCoins(update, context):
             print(quantity)
             symbol = i
             Processes.BuyProcess(price, quantity, symbol)
+
+        if  "Sell" in UserText and i in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i)
+            x = MainProcesses()
+            x.CollectData(KEY)
+            quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
+            print(quantity)
+            symbol = i
+            Processes.SellProcess(price, quantity, symbol)
 
 
 def main():
