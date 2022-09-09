@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 client = Client(key, secret)
 tikets = []
 class Processes():
+
     def TiketProcess(price, quantity, symbol, type):
         time = datetime.now().strftime("%H:%M:%S")
         global Tikets
@@ -64,10 +65,7 @@ class Processes():
 
 
 KEY = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
-
-Coins = ["BTCUSDT", "ETHUSDT"]
+Coins = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "KNCUSDT", "DOGEUSDT"]
 
 class MainProcesses():
     
@@ -80,30 +78,26 @@ def OperationWithCoins(update, context):
     global KEY
     UserText = update.message.text
     ReplyText = update.message.reply_text
-    for i in Coins:
-        
-        if  UserText == "Check price of {}".format(i):
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i)
-            x = MainProcesses()
+    x = MainProcesses()
+    for Coin in Coins:
+
+        if  "Check price" in UserText and Coin in UserText:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
             x.CollectData(KEY)
-            ReplyText("Price of {} equal {}".format(i, price))
+            ReplyText("Price of {} equal {}".format(Coin, price))
         
-        if  "Buy" in UserText and i in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i)
-            x = MainProcesses()
+        if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
             x.CollectData(KEY)
             quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
-            print(quantity)
-            symbol = i
+            symbol = Coin
             Processes.BuyProcess(price, quantity, symbol)
 
-        if  "Sell" in UserText and i in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i)
-            x = MainProcesses()
+        if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
             x.CollectData(KEY)
             quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
-            print(quantity)
-            symbol = i
+            symbol = Coin
             Processes.SellProcess(price, quantity, symbol)
 
 
