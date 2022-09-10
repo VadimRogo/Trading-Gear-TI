@@ -60,13 +60,15 @@ class Processes():
         except Exception as inst:
             print(inst)
 
+                
+                
+
 
 
 
 
 KEY = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-Coins = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "KNCUSDT", "DOGEUSDT"]
-
+Coins = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "KNCUSDT", "DOGEUSDT", "USDT", "BTC", "ETH", "LTC", "KNC", "DOGE"]
 class MainProcesses():
     
     def CollectData(self, KEY):
@@ -76,11 +78,11 @@ class MainProcesses():
 
 def OperationWithCoins(update, context):
     global KEY
+    global UserText, ReplyText
     UserText = update.message.text
     ReplyText = update.message.reply_text
     x = MainProcesses()
     for Coin in Coins:
-
         if  "Check price" in UserText and Coin in UserText:
             KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
             x.CollectData(KEY)
@@ -99,6 +101,13 @@ def OperationWithCoins(update, context):
             quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
             symbol = Coin
             Processes.SellProcess(price, quantity, symbol)
+        
+        if "Balance" in UserText and Coin in UserText:
+            Balance = float(client.get_asset_balance(asset=Coin)['free'])
+            ReplyText("Your balance {} is {}".format(Coin, Balance))
+            
+            
+
 
 
 def main():
