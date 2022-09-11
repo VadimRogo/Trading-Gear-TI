@@ -82,29 +82,34 @@ def OperationWithCoins(update, context):
     UserText = update.message.text
     ReplyText = update.message.reply_text
     x = MainProcesses()
-    for Coin in Coins:
-        if  "Check price" in UserText and Coin in UserText:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
-            x.CollectData(KEY)
-            ReplyText("Price of {} equal {}".format(Coin, price))
-        
-        if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
-            x.CollectData(KEY)
-            quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
-            symbol = Coin
-            Processes.BuyProcess(price, quantity, symbol)
+    if any(ext in UserText for ext in Coins):
+        for Coin in Coins:
+            if  "Check price" in UserText and Coin in UserText:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
+                x.CollectData(KEY)
+                ReplyText("Price of {} equal {}".format(Coin, price))
+            
+            if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
+                x.CollectData(KEY)
+                quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
+                symbol = Coin
+                Processes.BuyProcess(price, quantity, symbol)
 
-        if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
-            x.CollectData(KEY)
-            quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
-            symbol = Coin
-            Processes.SellProcess(price, quantity, symbol)
-        
-        if "Balance" in UserText and Coin in UserText:
-            Balance = float(client.get_asset_balance(asset=Coin)['free'])
-            ReplyText("Your balance {} is {}".format(Coin, Balance))
+            if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
+                x.CollectData(KEY)
+                quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
+                symbol = Coin
+                Processes.SellProcess(price, quantity, symbol)
+            
+            if "Balance" in UserText and Coin in UserText:
+                Balance = float(client.get_asset_balance(asset=Coin)['free'])
+                ReplyText("Your balance {} is {}".format(Coin, Balance))
+
+    if "Something" in UserText:
+        ReplyText("Something")
+
             
             
 
