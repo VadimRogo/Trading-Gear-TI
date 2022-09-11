@@ -35,9 +35,9 @@ class TiketProcesses():
         tikets.append(order)
 
     def TiketProcessTakeProfit(price, quantity, symbol, TakeProfitPercent):
+        global TakeProfitTikets
         time = datetime.now().strftime('%H:%M:%S')
         endprice = price + price / 100 * TakeProfitPercent
-        global tikets
         order = {
             'time' : time,
             'symbol' : symbol,
@@ -50,7 +50,7 @@ class TiketProcesses():
         TakeProfitTikets.append(order)
 
     def TiketProcessTakeProfitStopLoss(price, quantity, symbol, TakeProfitPercent, StopLossPercent):
-        global tikets
+        global TakeProfitStopLossTikets
         time = datetime.now().strftime('%H:%M:%S')
         TakeProfitEndPrice = price + price / 100 * TakeProfitPercent
         StopLossEndPrice = price - price / 100 * StopLossPercent
@@ -69,7 +69,7 @@ class TiketProcesses():
         print("ALL WORK")
     
     def TiketProcessStopLoss(price, quantity, symbol, StopLossPercent):
-        global tikets
+        global StopLossTikets
         time = datetime.now().strftime('%H:%M:%S')
         StopLossEndPrice = price - price / 100 * StopLossPercent
         order = {
@@ -87,8 +87,9 @@ class TiketProcesses():
 
 class BuyAndSellProcesses():
 
-    def SellProcess(price, quantity, symbol):
+    def SellProcessTiket(price, quantity, symbol, tiket):
         #Making Sell and check if system make error
+        global TakeProfitStopLossTikets, TakeProfitTikets, StopLossTikets
         try:    
             order = client.create_order(
                 symbol = symbol,
@@ -96,8 +97,20 @@ class BuyAndSellProcesses():
                 type=Client.ORDER_TYPE_MARKET,
                 quantity = quantity
                 )
-
-            TiketProcesses.TiketProcess(price, quantity, symbol, 'Sell')
+            tiket['sold'] = True
+        except Exception as inst:
+            print(inst)
+        
+    def SellProcess(price, quantity, symbol):
+        #Making Sell and check if system make error
+        global TakeProfitStopLossTikets, TakeProfitTikets, StopLossTikets
+        try:    
+            order = client.create_order(
+                symbol = symbol,
+                side=Client.SIDE_SELL,
+                type=Client.ORDER_TYPE_MARKET,
+                quantity = quantity
+                )
         except Exception as inst:
             print(inst)
 
@@ -200,27 +213,35 @@ def OperationWithCoins(update, context):
                 Balance = client.get_asset_balance(asset=Coin)['free']
                 ReplyText("Your balance {} is {}".format(Coin, Balance))
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1 and len(UserText) <= 27:
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and len(UserText) <= 30:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+                x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 TakeProfitpercent = float(re.findall(r'\d+', UserText)[1])
                 quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
                 BuyAndSellProcesses.BuyProcessWithTakeProfit(price, quantity, symbol, TakeProfitpercent)
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1 and len(UserText) <= 27:
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and len(UserText) <= 30:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+                x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 StopLossPercent = float(re.findall(r'\d+', UserText)[1])
                 quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
                 BuyAndSellProcesses.BuyProcessWithStopLoss(price, quantity, symbol, StopLossPercent)
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[2]) >= 1 and len(UserText) <= 39:
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[2]) > 0 and len(UserText) <= 42:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+                x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 TakeProfitpercent = float(re.findall(r'\d+', UserText)[1])
                 StopLossPercent = float(re.findall(r'\d+', UserText)[2])
                 quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
                 BuyAndSellProcesses.BuyProcessWithTakeProfitAndStopLoss(price, quantity, symbol, StopLossPercent, TakeProfitpercent)
+
+            print(TakeProfitStopLossTikets)
 
 
 
@@ -229,6 +250,33 @@ def OperationWithCoins(update, context):
     if "Something" in UserText:
         ReplyText("Something")
 
+    if len(TakeProfitTikets) >= 1:
+        for i in TakeProfitTikets:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
+            x.CollectData(KEY)
+            symbol = i['symbol']
+            if i['TakeProfitEndPrice'] <= price and i['sold'] != False:
+                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+    
+    if len(StopLossTikets) >= 1:
+        for i in StopLossTikets:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
+            x.CollectData(KEY)
+            symbol = i['symbol']
+            quantity = i['quantity']
+            if i['StopLossEndPrice'] >= price and i['sold'] != False:
+                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+    
+    if len(TakeProfitStopLossTikets) >= 1:
+        for i in TakeProfitStopLossTikets:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
+            x.CollectData(KEY)
+            symbol = i['symbol']
+            quantity = i['quantity']
+            if i['StopLossEndPrice'] >= price and i['sold'] != False:
+                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+            elif i['TakeProfitEndPrice'] <= price and i['sold'] != False:
+                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
             
             
 
