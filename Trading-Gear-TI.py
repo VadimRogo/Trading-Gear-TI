@@ -68,7 +68,7 @@ class Processes():
 
 
 KEY = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-Coins = ["BTCUSDT", "ETHUSDT", "LTCUSDT", "KNCUSDT", "DOGEUSDT", "USDT", "BTC", "ETH", "LTC", "KNC", "DOGE"]
+Coins = ["USDT", "BTC", "ETH", "LTC", "KNC", "DOGE"]
 class MainProcesses():
     
     def CollectData(self, KEY):
@@ -85,26 +85,26 @@ def OperationWithCoins(update, context):
     if any(ext in UserText for ext in Coins):
         for Coin in Coins:
             if  "Check price" in UserText and Coin in UserText:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
                 x.CollectData(KEY)
                 ReplyText("Price of {} equal {}".format(Coin, price))
             
             if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
                 x.CollectData(KEY)
                 quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
-                symbol = Coin
+                symbol = Coin + "USDT"
                 Processes.BuyProcess(price, quantity, symbol)
 
             if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(Coin)
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
                 x.CollectData(KEY)
                 quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
-                symbol = Coin
+                symbol = Coin + "USDT"
                 Processes.SellProcess(price, quantity, symbol)
             
             if "Balance" in UserText and Coin in UserText:
-                Balance = float(client.get_asset_balance(asset=Coin)['free'])
+                Balance = client.get_asset_balance(asset=Coin)['free']
                 ReplyText("Your balance {} is {}".format(Coin, Balance))
 
     if "Something" in UserText:
