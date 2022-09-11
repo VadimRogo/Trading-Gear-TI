@@ -2,8 +2,6 @@ import logging
 import requests
 import json, time, math, random
 import re
-
-
 from binance.client import Client
 from datetime import datetime
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
@@ -11,17 +9,22 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
+
 key = 'T4ZfheSMEw9zpet4HrDWg5NXoL7j4WrOdLl9pEObwByXYVslFK2Yman9cbAVIxwt'
 secret = '7aHcuPBXfrqbIJ6AYe3ckav1Rh1G9GY59g0BBzJ6rjIZ7smvcwDi327CSdvy9IYg'
 logger = logging.getLogger(__name__)
 client = Client(key, secret)
 tikets = []
+TakeProfitStopLossTikets = []
+TakeProfitTikets = []
+StopLossTikets = []
+
 class Processes():
 
     def TiketProcess(price, quantity, symbol, type):
         time = datetime.now().strftime("%H:%M:%S")
-        global Tikets
-        x = {
+        global tikets
+        order = {
             'time' : time,
             'price' : price,
             'symbol' : symbol,
@@ -29,7 +32,55 @@ class Processes():
             'type' : type,
             'sold' : False
         }
-        tikets.append(x)
+        tikets.append(order)
+
+    def TiketProcessTakeProfit(price, quantity, symbol, TakeProfitPercent):
+        time = datetime.now().strftime('%H:%M:%S')
+        endprice = price + price / 100 * TakeProfitPercent
+        global tikets
+        order = {
+            'time' : time,
+            'symbol' : symbol,
+            'quantity' : quantity,
+            'price' : price,
+            'endprice' : endprice,
+            'percent' : TakeProfitPercent,
+            'sold' : False
+        }
+        TakeProfitTikets.append(order)
+
+    def TiketProcessTakeProfitStopLoss(price, quantity, symbol, TakeProfitPercent, StopLossPercent):
+        global tikets
+        time = datetime.now().strftime('%H:%M:%S')
+        TakeProfitEndPrice = price + price / 100 * TakeProfitPercent
+        StopLossEndPrice = price - price / 100 * StopLossPercent
+        order = {
+            'time' : time,
+            'symbol' : symbol,
+            'quantity' : quantity,
+            'price' : price,
+            'TakeProfitEndPrice' : TakeProfitEndPrice,
+            'TakeProfitPercent' : TakeProfitPercent,
+            'StopLossEndPrice' : StopLossEndPrice,
+            'StopLossPercent' : StopLossPercent,
+            'sold' : False
+        }
+        TakeProfitStopLossTikets.append(order)
+    
+    def TiketProcessStopLoss(price, quantity, symbol, StopLossPercent):
+        global tikets
+        time = datetime.now().strftime('%H:%M:%S')
+        StopLossEndPrice = price - price / 100 * StopLossPercent
+        order = {
+            'time' : time,
+            'symbol' : symbol,
+            'quantity' : quantity,
+            'price' : price,
+            'StopLossEndPrice' : StopLossEndPrice,
+            'StopLossPercent' : StopLossPercent,
+            'sold' : False
+        }
+        StopLossTikets.append(order)
 
     def SellProcess(price, quantity, symbol):
         #Making Sell and check if system make error
@@ -54,11 +105,46 @@ class Processes():
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=quantity
                 )
-            
-            Processes.TiketProcess(price, quantity, symbol, 'Buy')
-            print("Was bouth {}".format(symbol))
         except Exception as inst:
             print(inst)
+    
+    def BuyProcessWithTakeProfit(price, quantity, symbol, TakeProfitPercent):
+        try:
+            order = client.create_order(
+                symbol = symbol,
+                side=Client.SIDE_BUY,
+                type=Client.ORDER_TYPE_MARKET,
+                quantity=quantity
+                )
+            Processes.TiketProcessTakeProfit(price, quantity, symbol, TakeProfitPercent)
+        except Exception as inst:
+            print(inst)
+    
+    def BuyProcessWithStopLoss(price, quantity, symbol, StopLossPercent):
+        try:
+            order = client.create_order(
+                symbol = symbol,
+                side=Client.SIDE_BUY,
+                type=Client.ORDER_TYPE_MARKET,
+                quantity=quantity
+                )
+            Processes.TiketProcessStopLoss(price, quantity, symbol, StopLossPercent)
+        except Exception as inst:
+            print(inst)
+    
+
+    def BuyProcessWithTakeProfitAndStopLoss(price, quantity, symbol, StopLossPercent, TakeProfitPercent):
+        try:
+            order = client.create_order(
+                symbol = symbol,
+                side=Client.SIDE_BUY,
+                type=Client.ORDER_TYPE_MARKET,
+                quantity=quantity
+                )
+            Processes.TiketProcessTakeProfitStopLoss(price, quantity, symbol, TakeProfitPercent, StopLossPercent)
+        except Exception as inst:
+            print(inst)
+        
 
                 
                 
@@ -89,23 +175,33 @@ def OperationWithCoins(update, context):
                 x.CollectData(KEY)
                 ReplyText("Price of {} equal {}".format(Coin, price))
             
-            if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+            if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10:
                 KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
                 x.CollectData(KEY)
-                quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
+                dollars = float(re.findall(r'\d+', UserText)[0])
+                quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
                 Processes.BuyProcess(price, quantity, symbol)
 
-            if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[-1]) >= 10:
+            if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10:
                 KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
                 x.CollectData(KEY)
-                quantity = round(float(re.findall(r'\d+', UserText)[-1]) / price, 5)
+                dollars = float(re.findall(r'\d+', UserText)[0])
+                quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
                 Processes.SellProcess(price, quantity, symbol)
             
             if "Balance" in UserText and Coin in UserText:
                 Balance = client.get_asset_balance(asset=Coin)['free']
                 ReplyText("Your balance {} is {}".format(Coin, Balance))
+
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "Take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1:
+                dollars = float(re.findall(r'\d+', UserText)[0])
+                percent = float(re.findall(r'\d+', UserText)[1])
+                quantity = round(dollars / price, 5)
+
+
+            
 
     if "Something" in UserText:
         ReplyText("Something")
