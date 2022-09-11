@@ -19,7 +19,7 @@ TakeProfitStopLossTikets = []
 TakeProfitTikets = []
 StopLossTikets = []
 
-class Processes():
+class TiketProcesses():
 
     def TiketProcess(price, quantity, symbol, type):
         time = datetime.now().strftime("%H:%M:%S")
@@ -66,6 +66,7 @@ class Processes():
             'sold' : False
         }
         TakeProfitStopLossTikets.append(order)
+        print("ALL WORK")
     
     def TiketProcessStopLoss(price, quantity, symbol, StopLossPercent):
         global tikets
@@ -82,6 +83,10 @@ class Processes():
         }
         StopLossTikets.append(order)
 
+
+
+class BuyAndSellProcesses():
+
     def SellProcess(price, quantity, symbol):
         #Making Sell and check if system make error
         try:    
@@ -92,7 +97,7 @@ class Processes():
                 quantity = quantity
                 )
 
-            Processes.TiketProcess(price, quantity, symbol, 'Sell')
+            TiketProcesses.TiketProcess(price, quantity, symbol, 'Sell')
         except Exception as inst:
             print(inst)
 
@@ -116,7 +121,7 @@ class Processes():
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=quantity
                 )
-            Processes.TiketProcessTakeProfit(price, quantity, symbol, TakeProfitPercent)
+            TiketProcesses.TiketProcessTakeProfit(price, quantity, symbol, TakeProfitPercent)
         except Exception as inst:
             print(inst)
     
@@ -128,7 +133,7 @@ class Processes():
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=quantity
                 )
-            Processes.TiketProcessStopLoss(price, quantity, symbol, StopLossPercent)
+            TiketProcesses.TiketProcessStopLoss(price, quantity, symbol, StopLossPercent)
         except Exception as inst:
             print(inst)
     
@@ -141,7 +146,7 @@ class Processes():
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=quantity
                 )
-            Processes.TiketProcessTakeProfitStopLoss(price, quantity, symbol, TakeProfitPercent, StopLossPercent)
+            TiketProcesses.TiketProcessTakeProfitStopLoss(price, quantity, symbol, TakeProfitPercent, StopLossPercent)
         except Exception as inst:
             print(inst)
         
@@ -175,13 +180,13 @@ def OperationWithCoins(update, context):
                 x.CollectData(KEY)
                 ReplyText("Price of {} equal {}".format(Coin, price))
             
-            if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10:
+            if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and len(UserText) < 13:
                 KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
                 x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
-                Processes.BuyProcess(price, quantity, symbol)
+                BuyAndSellProcesses.BuyProcess(price, quantity, symbol)
 
             if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10:
                 KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
@@ -189,16 +194,34 @@ def OperationWithCoins(update, context):
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
-                Processes.SellProcess(price, quantity, symbol)
+                BuyAndSellProcesses.SellProcess(price, quantity, symbol)
             
             if "Balance" in UserText and Coin in UserText:
                 Balance = client.get_asset_balance(asset=Coin)['free']
                 ReplyText("Your balance {} is {}".format(Coin, Balance))
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "Take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1:
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1 and len(UserText) <= 27:
                 dollars = float(re.findall(r'\d+', UserText)[0])
-                percent = float(re.findall(r'\d+', UserText)[1])
+                TakeProfitpercent = float(re.findall(r'\d+', UserText)[1])
                 quantity = round(dollars / price, 5)
+                symbol = Coin + "USDT"
+                BuyAndSellProcesses.BuyProcessWithTakeProfit(price, quantity, symbol, TakeProfitpercent)
+
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1 and len(UserText) <= 27:
+                dollars = float(re.findall(r'\d+', UserText)[0])
+                StopLossPercent = float(re.findall(r'\d+', UserText)[1])
+                quantity = round(dollars / price, 5)
+                symbol = Coin + "USDT"
+                BuyAndSellProcesses.BuyProcessWithStopLoss(price, quantity, symbol, StopLossPercent)
+
+            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 1 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[2]) >= 1 and len(UserText) <= 39:
+                dollars = float(re.findall(r'\d+', UserText)[0])
+                TakeProfitpercent = float(re.findall(r'\d+', UserText)[1])
+                StopLossPercent = float(re.findall(r'\d+', UserText)[2])
+                quantity = round(dollars / price, 5)
+                symbol = Coin + "USDT"
+                BuyAndSellProcesses.BuyProcessWithTakeProfitAndStopLoss(price, quantity, symbol, StopLossPercent, TakeProfitpercent)
+
 
 
             
