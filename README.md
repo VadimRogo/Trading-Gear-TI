@@ -1,2 +1,2 @@
 # Trading-Gear-TI
- TelegramBot for easy trading on binance
+ TelegramBot for easy trading in binance
