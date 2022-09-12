@@ -1,10 +1,13 @@
+from ast import While
 import logging
 import requests
 import json, time, math, random
 import re
+import asyncio
 from binance.client import Client
 from datetime import datetime
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -83,8 +86,6 @@ class TiketProcesses():
         }
         StopLossTikets.append(order)
 
-
-
 class BuyAndSellProcesses():
 
     def SellProcessTiket(price, quantity, symbol, tiket):
@@ -162,14 +163,6 @@ class BuyAndSellProcesses():
             TiketProcesses.TiketProcessTakeProfitStopLoss(price, quantity, symbol, TakeProfitPercent, StopLossPercent)
         except Exception as inst:
             print(inst)
-        
-
-                
-                
-
-
-
-
 
 KEY = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
 Coins = ["USDT", "BTC", "ETH", "LTC", "KNC", "DOGE"]
@@ -180,7 +173,48 @@ class MainProcesses():
         data = requests.get(KEY).json()
         price = float(data['price'])
 
+    async def WalkingForObservTP():
+        for i in TakeProfitTikets:
+            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
+            x = MainProcesses()
+            x.CollectData(KEY)
+            symbol = i['symbol']
+            quantity = i['quantity']
+            if i['TakeProfitEndPrice'] <= price and i['sold'] != False:
+                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+            await asyncio.sleep(10)
+
+    async def WalkingForObservSL():
+        if len(StopLossTikets) >= 1:
+            for i in StopLossTikets:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
+                x = MainProcesses()
+                x.CollectData(KEY)
+                symbol = i['symbol']
+                quantity = i['quantity']
+                if i['StopLossEndPrice'] >= price and i['sold'] != False:
+                    BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+                await asyncio.sleep(10)
+
+    async def WalkingForObservTPSL():
+        if len(TakeProfitStopLossTikets) >= 1:
+            for i in TakeProfitStopLossTikets:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
+                x = MainProcesses()
+                x.CollectData(KEY)
+                symbol = i['symbol']
+                quantity = i['quantity']
+                if i['StopLossEndPrice'] >= price and i['sold'] != False:
+                    BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+                elif i['TakeProfitEndPrice'] <= price and i['sold'] != False:
+                    BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
+                await asyncio.sleep(10)
+                print("TakeProfit ", i['TakeProfitEndPrice'])
+                print("StopLOSS ", i['StopLossEndPrice'])
+                print("Walking for observ")
+
 def OperationWithCoins(update, context):
+    
     global KEY
     global UserText, ReplyText
     UserText = update.message.text
@@ -239,47 +273,17 @@ def OperationWithCoins(update, context):
                 StopLossPercent = float(re.findall(r'\d+', UserText)[2])
                 quantity = round(dollars / price, 5)
                 symbol = Coin + "USDT"
-                BuyAndSellProcesses.BuyProcessWithTakeProfitAndStopLoss(price, quantity, symbol, StopLossPercent, TakeProfitpercent)
-
-            print(TakeProfitStopLossTikets)
-
-
-
-            
+                BuyAndSellProcesses.BuyProcessWithTakeProfitAndStopLoss(price, quantity, symbol, StopLossPercent, TakeProfitpercent)       
 
     if "Something" in UserText:
         ReplyText("Something")
 
     if len(TakeProfitTikets) >= 1:
-        for i in TakeProfitTikets:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
-            x.CollectData(KEY)
-            symbol = i['symbol']
-            if i['TakeProfitEndPrice'] <= price and i['sold'] != False:
-                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
-    
+        asyncio.run(MainProcesses.WalkingForObservTP())
     if len(StopLossTikets) >= 1:
-        for i in StopLossTikets:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
-            x.CollectData(KEY)
-            symbol = i['symbol']
-            quantity = i['quantity']
-            if i['StopLossEndPrice'] >= price and i['sold'] != False:
-                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
-    
+        asyncio.run(MainProcesses.WalkingForObservSL())
     if len(TakeProfitStopLossTikets) >= 1:
-        for i in TakeProfitStopLossTikets:
-            KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}".format(i['symbol'])
-            x.CollectData(KEY)
-            symbol = i['symbol']
-            quantity = i['quantity']
-            if i['StopLossEndPrice'] >= price and i['sold'] != False:
-                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
-            elif i['TakeProfitEndPrice'] <= price and i['sold'] != False:
-                BuyAndSellProcesses.SellProcessTiket(price, quantity, symbol, i)
-            
-            
-
+        asyncio.run(MainProcesses.WalkingForObservTPSL())
 
 
 def main():
