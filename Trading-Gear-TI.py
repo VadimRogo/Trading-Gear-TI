@@ -165,7 +165,7 @@ class BuyAndSellProcesses():
             print(inst)
 
 KEY = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
-Coins = ["USDT", "BTC", "ETH", "LTC", "KNC", "DOGE"]
+Coins = ["usdt", "btc", "eth", "ltc", "knc", "doge"]
 class MainProcesses():
     
     def CollectData(self, KEY):
@@ -218,61 +218,62 @@ def OperationWithCoins(update, context):
     global KEY
     global UserText, ReplyText
     UserText = update.message.text
+    UserText = str(UserText).lower()
     ReplyText = update.message.reply_text
     x = MainProcesses()
-    if any(ext in UserText for ext in Coins):
+    if any(ext in str(UserText) for ext in Coins):
         for Coin in Coins:
-            if  "Check price" in UserText and Coin in UserText:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+            if  "check price" in UserText and Coin in UserText:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin.upper())
                 x.CollectData(KEY)
                 ReplyText("Price of {} equal {}".format(Coin, price))
             
-            if  "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and len(UserText) < 13:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+            if  "buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and len(UserText) < 13:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin.upper())
                 x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 quantity = round(dollars / price, 5)
-                symbol = Coin + "USDT"
+                symbol = Coin.upper() + "USDT"
                 BuyAndSellProcesses.BuyProcess(price, quantity, symbol)
 
-            if  "Sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+            if  "sell" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin.upper())
                 x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 quantity = round(dollars / price, 5)
-                symbol = Coin + "USDT"
+                symbol = Coin.upper() + "USDT"
                 BuyAndSellProcesses.SellProcess(price, quantity, symbol)
             
-            if "Balance" in UserText and Coin in UserText:
+            if "balance" in UserText and Coin in UserText:
                 Balance = client.get_asset_balance(asset=Coin)['free']
                 ReplyText("Your balance {} is {}".format(Coin, Balance))
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and len(UserText) <= 30:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+            if "buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and len(UserText) <= 30:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin.upper())
                 x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 TakeProfitpercent = float(re.findall(r'\d+', UserText)[1])
                 quantity = round(dollars / price, 5)
-                symbol = Coin + "USDT"
+                symbol = Coin.upper() + "USDT"
                 BuyAndSellProcesses.BuyProcessWithTakeProfit(price, quantity, symbol, TakeProfitpercent)
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and len(UserText) <= 30:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+            if "buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and len(UserText) <= 30:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin.upper())
                 x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 StopLossPercent = float(re.findall(r'\d+', UserText)[1])
                 quantity = round(dollars / price, 5)
-                symbol = Coin + "USDT"
+                symbol = Coin.upper() + "USDT"
                 BuyAndSellProcesses.BuyProcessWithStopLoss(price, quantity, symbol, StopLossPercent)
 
-            if "Buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[2]) > 0 and len(UserText) <= 42:
-                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin)
+            if "buy" in UserText and Coin in UserText and len(re.findall(r'\d+', UserText)) != 0 and float(re.findall(r'\d+', UserText)[0]) >= 10 and "take profit" in UserText and float(re.findall(r'\d+', UserText)[1]) >= 0 and "stop loss" in UserText and float(re.findall(r'\d+', UserText)[2]) > 0 and len(UserText) <= 42:
+                KEY = "https://api.binance.com/api/v3/ticker/price?symbol={}USDT".format(Coin.upper())
                 x.CollectData(KEY)
                 dollars = float(re.findall(r'\d+', UserText)[0])
                 TakeProfitpercent = float(re.findall(r'\d+', UserText)[1])
                 StopLossPercent = float(re.findall(r'\d+', UserText)[2])
                 quantity = round(dollars / price, 5)
-                symbol = Coin + "USDT"
+                symbol = Coin.upper() + "USDT"
                 BuyAndSellProcesses.BuyProcessWithTakeProfitAndStopLoss(price, quantity, symbol, StopLossPercent, TakeProfitpercent)       
 
     if "Something" in UserText:
